@@ -2,16 +2,21 @@
 from flask import Flask
 from flask.json import jsonify
 from utils import database, redis_db
-from models import Article
-from search import check_cache
+from db_models import Article
 
 app = Flask(__name__)
-
 
 def single_article_json(article_id, fields=["article_id", "title", "body", "published_date", "url"]):
     info = database.session.query(Article).filter(Article.article_id == article_id).first()
     if info is not None:
         return {field: info.__dict__[field] for field in fields}
+    return None
+
+def check_cache(model_type, article_id, n=100):
+    similar = redis_db.zrange('%s:%s' % (model_type, str(article_id)), 1, n, desc=True, withscores=True)
+    #print similar
+    if len(similar) > 0:
+        return similar
     return None
 
 @app.route('/articles/')
@@ -51,8 +56,8 @@ def index(article_id, model_type, n):
     articles = []
     rank = 1
     similar = check_cache(model_type, article_id, n)
-    print similar
-    for (sim_article_id, score) in reversed(similar):
+    #print similar
+    for (sim_article_id, score) in similar:
         json_article = single_article_json(sim_article_id, fields=["article_id", "title", "published_date", "url"])
         json_article['score'] = score
         articles.append(json_article)
