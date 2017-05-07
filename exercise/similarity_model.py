@@ -30,13 +30,18 @@ class SimilarityModel(object):
         id2vector = {i: item[0] for i, item in zip(range(len(self.data)), self.data)}
         for i in range(model.shape[0]):
             current_article_id = id2vector[i]
+            similarity_values = cosine_similarity(model[i:i + 1], model)[0]
 
-            # For each article, calculate its cosine similarity values with all other articles
+            for j, value in zip(range(len(similarity_values)), similarity_values):
+                redis_db.zadd('%s:%s' % (self.model_type, current_article_id), value, id2vector[j])
+
+                # For each article, calculate its cosine similarity values with all other articles
             # Save these values in Redis for easy access
 
 
     def tfidf_model(cls, data, save_threshold=0):
-        pass
+        model = TfidfVectorizer(stop_words='english').fit_transform(map(lambda x: x[1], data))
+        return model
 
     def article2vec_model(cls, data, save_threshold=0):
         pass

@@ -18,3 +18,4 @@ six==1.10.0
 smart-open==1.5.2
 SQLAlchemy==1.0.12
 Werkzeug==0.10.4
+Flask==0.12.1
